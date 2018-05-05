@@ -30,6 +30,7 @@ public class AuthenticationTest {
         UsernamePasswordToken token = new UsernamePasswordToken("mark", "12345");
         //进行认证
         subject.login(token);
+
         //判断认证是否成功，认证失败会报异常
         System.out.println("isAuthentication :"+subject.isAuthenticated());
         //判断是否存在角色
