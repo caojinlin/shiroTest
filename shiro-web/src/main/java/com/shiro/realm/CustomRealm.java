@@ -1,5 +1,7 @@
 package com.shiro.realm;
 
+import com.shiro.dao.UserDao;
+import com.shiro.vo.User;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -10,14 +12,22 @@ import org.apache.shiro.crypto.hash.Md5Hash;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import javax.annotation.Resource;
+import java.util.*;
 
-public class CustomRealm extends AuthorizingRealm{
+public class CustomRealm extends AuthorizingRealm {
+
+    @Resource
+    private UserDao userDao;
+
+    public static void main(String[] args) {
+        Md5Hash md5Hash = new Md5Hash("testcjl");
+        System.out.println(md5Hash.toString());
+    }
+
     /**
      * 授权方法
+     *
      * @param principalCollection
      * @return
      */
@@ -35,53 +45,52 @@ public class CustomRealm extends AuthorizingRealm{
         simpleAuthorizationInfo.setStringPermissions(permissions);
         return simpleAuthorizationInfo;
     }
+
     /**
      * 认证方法
+     *
      * @param authenticationToken
      * @return
      * @throws AuthenticationException
      */
     @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken)
+            throws AuthenticationException {
         //从主体转过来的认证信息中获取用户名
         String username = (String) authenticationToken.getPrincipal();
         //通过用户名到数据库中获取凭证
         String password = getpasswordbyUserName(username);
-        if(password==null){
+        if (password == null) {
             return null;
         }
         //构造返回值
-        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo("cjl",password,"customRealm");
+        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(username,
+                password, "customRealm");
         return authenticationInfo;
     }
 
-    Map<String,String> usermap = new HashMap<String, String>(16);
-    {
-        usermap.put("cjl", "be32a325bd611bbb845327892ef65885");
-        super.setName("customRealm");
-    }
-
     private String getpasswordbyUserName(String username) {
-        return usermap.get(username);
+        User user = userDao.getUserByUserName(username);
+        if (user != null) {
+            return user.getPassword();
+        }
+        return null;
     }
 
     private Set<String> getPermissionsByUsername(String username) {
-        Set<String> permission = new HashSet<String>();
-        permission.add("user:delete");
-        permission.add("user:add");
-        return  permission;
+        List<String> list = userDao.getPermissionsByUsername(username);
+        if (list != null) {
+            return new HashSet<String>(list);
+        }
+        return null;
     }
 
     private Set<String> getRolesByUsername(String username) {
-        Set<String> roles =  new HashSet<String>();
-        roles.add("admin");
-        roles.add("test");
-        return roles;
+        List<String> list = userDao.getRolesByUserName(username);
+        if (list != null) {
+            return new HashSet<String>(list);
+        }
+        return null;
     }
 
-
-    public static void main(String[] args) {
-        Md5Hash md5Hash = new Md5Hash("testcjl");
-        System.out.println(md5Hash.toString());
-    }
 }
