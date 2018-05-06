@@ -14,32 +14,53 @@
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
 		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
 
-        <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
-            <property name="securityManager" ref="securityManager"/>
-            <property name="loginUrl" value="login.html"/>
-            <property name="unauthorizedUrl" value="403.html"/>
-            <property name="filterChainDefinitions">
-                <value>
-                    /login.html = anon
-                    /sublogin = anon
-                    /* = authc
-                </value>
-            </property>
-        </bean>
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="login.html"/>
+        <property name="unauthorizedUrl" value="403.html"/>
+        <property name="filterChainDefinitions">
+            <value>
+                /login.html = anon
+                /sublogin = anon
+                /testRolesOr = rolesOr["user:delete","user:add"]
+                /* = authc
+            </value>
+        </property>
+        <property name="filters">
+            <util:map>
+                <entry key="rolesOr" value-ref="rolesOrFilter"/>
+            </util:map>
+        </property>
+    </bean>
 
-        <!-- 创建SecurityManager对象-->
-        <bean class="org.apache.shiro.web.mgt.DefaultWebSecurityManager" id="securityManager">
-                <property name="realm" ref="customRealm"/>
-        </bean>
+    <bean class="com.shiro.filter.RolesOrFilter" id="rolesOrFilter"/>
 
-        <bean class="com.shiro.realm.CustomRealm" id="customRealm">
-            <property name="credentialsMatcher" ref="credentialsMatcher"/>
-        </bean>
+    <!-- 创建SecurityManager对象-->
+    <bean class="org.apache.shiro.web.mgt.DefaultWebSecurityManager" id="securityManager">
+        <property name="realm" ref="customRealm"/>
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="cacheManager" ref="cacheManager"/>
+    </bean>
 
-        <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher" id="credentialsMatcher">
-            <property name="hashAlgorithmName" value="md5"/>
-            <property name="hashIterations" value="1"/>
-        </bean>
-        <import resource="spring-dao.xml"/>
-        <context:component-scan base-package="com.shiro"/>
+    <bean class="com.shiro.realm.CustomRealm" id="customRealm">
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+    </bean>
+
+    <bean class="com.shiro.session.CustomSessionManager" id="sessionManager">
+        <property name="sessionDAO" ref="redisSessionDao"/>
+    </bean>
+
+    <bean class="com.shiro.session.RedisSessionDao" id="redisSessionDao"/>
+
+    <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher"
+          id="credentialsMatcher">
+        <property name="hashAlgorithmName" value="md5"/>
+        <property name="hashIterations" value="1"/>
+    </bean>
+
+    <bean class="com.shiro.cache.RedisCacheManager" id="cacheManager"/>
+
+    <import resource="spring-dao.xml"/>
+    <import resource="spring-redis.xml"/>
+    <context:component-scan base-package="com.shiro"/>
 </beans>

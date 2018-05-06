@@ -70,6 +70,7 @@ public class CustomRealm extends AuthorizingRealm {
     }
 
     private String getpasswordbyUserName(String username) {
+        System.out.println("从数据库中获取数据");
         User user = userDao.getUserByUserName(username);
         if (user != null) {
             return user.getPassword();
@@ -78,11 +79,15 @@ public class CustomRealm extends AuthorizingRealm {
     }
 
     private Set<String> getPermissionsByUsername(String username) {
-        List<String> list = userDao.getPermissionsByUsername(username);
-        if (list != null) {
-            return new HashSet<String>(list);
+        Set<String> roles = getRolesByUsername(username);
+        Set<String> list = new HashSet<String>();
+        for (String role : roles) {
+            List<String> perms = userDao.getPermissionsByUsername(role);
+            if (perms != null) {
+               list.addAll(perms);
+             }
         }
-        return null;
+        return list;
     }
 
     private Set<String> getRolesByUsername(String username) {
