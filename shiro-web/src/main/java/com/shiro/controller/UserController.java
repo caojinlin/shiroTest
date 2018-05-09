@@ -22,6 +22,8 @@ public class UserController {
         Subject subject = SecurityUtils.getSubject();
         UsernamePasswordToken token = new UsernamePasswordToken(user.getUsername(),user.getPassword());
         try {
+            //保存登陆状态
+            token.setRememberMe(true);
             subject.login(token);
         } catch (AuthenticationException e) {
             return e.getMessage();
